@@ -9,6 +9,7 @@ import org.opensearch.flint.spark.SqlExecutionListener
 import org.opensearch.flint.spark.covering.ApplyFlintSparkCoveringIndex
 import org.opensearch.flint.spark.skipping.ApplyFlintSparkSkippingIndex
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
