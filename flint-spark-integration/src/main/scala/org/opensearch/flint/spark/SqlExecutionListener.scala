@@ -15,16 +15,16 @@ class SqlExecutionListener extends QueryExecutionListener with Logging {
     logError(s"FlintSparkOptimizer LISTENER: Query succeeded in $durationMs ms")
 
     val parsedPlanJson = qe.logical.prettyJson
-    logInfo(s"Parsed Logical Plan in JSON: $parsedPlanJson")
+    logError(s"Parsed Logical Plan in JSON: $parsedPlanJson")
 
     val analyzedPlanJson = qe.analyzed.prettyJson
-    logInfo(s"Analyzed Logical Plan in JSON: $analyzedPlanJson")
+    logError(s"Analyzed Logical Plan in JSON: $analyzedPlanJson")
 
     val optimizedPlanJson = qe.optimizedPlan.prettyJson
-    logInfo(s"Optimized Logical Plan in JSON: $optimizedPlanJson")
+    logError(s"Optimized Logical Plan in JSON: $optimizedPlanJson")
 
     val physicalPlanJson = qe.sparkPlan.prettyJson
-    logInfo(s"Physical/Execution Plan in JSON: $physicalPlanJson")
+    logError(s"Physical/Execution Plan in JSON: $physicalPlanJson")
   }
 
   override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {
