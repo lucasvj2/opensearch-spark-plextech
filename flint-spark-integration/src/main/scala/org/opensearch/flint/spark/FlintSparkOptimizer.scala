@@ -5,6 +5,7 @@
 
 package org.opensearch.flint.spark
 
+import org.opensearch.flint.spark.SqlExecutionListener
 import org.opensearch.flint.spark.covering.ApplyFlintSparkCoveringIndex
 import org.opensearch.flint.spark.skipping.ApplyFlintSparkSkippingIndex
 
@@ -22,6 +23,8 @@ class FlintSparkOptimizer(spark: SparkSession) extends Rule[LogicalPlan] {
 
   /** Flint Spark API */
   private val flint: FlintSpark = new FlintSpark(spark)
+  private val li = spark.listenerManager.register(new SqlExecutionListener())
+  logError("LOGGING WORKING CORRECTLY")
 
   /** Skipping index rewrite rule */
   private val skippingIndexRule = new ApplyFlintSparkSkippingIndex(flint)
