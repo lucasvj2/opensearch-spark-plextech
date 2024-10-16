@@ -11,7 +11,7 @@ import org.apache.spark.sql.util.QueryExecutionListener
 
 class SqlExecutionListener extends QueryExecutionListener with Logging {
   override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
-    private val durationMs: Long = durationNs / 1_000_000
+    val durationMs: Long = durationNs / 1000000
     logError(s"FlintSparkOptimizer LISTENER: Query succeeded in $durationMs ms")
 
     val parsedPlanJson = qe.logical.prettyJson
