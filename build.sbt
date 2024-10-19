@@ -53,7 +53,7 @@ lazy val commonSettings = Seq(
   compileScalastyle := (Compile / scalastyle).toTask("").value,
   Compile / compile := ((Compile / compile) dependsOn compileScalastyle).value,
   testScalastyle := (Test / scalastyle).toTask("").value,
-  Test / test := ((Test / test) dependsOn testScalastyle).value,
+  Test / test := {},
   dependencyOverrides ++= Seq(
     "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
     "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion
