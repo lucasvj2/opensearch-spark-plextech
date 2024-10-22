@@ -16,6 +16,16 @@ import org.apache.spark.sql.execution.QueryExecution
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.util.QueryExecutionListener
 
+case class QueryPlanNode(
+  queryId: String,
+  parsedPlanJson: String,
+  analyzedPlanJson: String,
+  optimizedPlanJson: String,
+  physicalPlanJson: String,
+  nodeSignatures: Map[String, Map[String, (String, String)]], // For each plan, map node to signatures
+  metadata: Map[String, String]
+)
+
 object PlanSignature {
 
   private def hashString(s: String): String = {
@@ -34,12 +44,9 @@ object PlanSignature {
   }
 
   private def removeLiterals(expr: Expression): String = {
-    expr.transform { case lit: Literal =>
-      Literal(null) // Replace literals with a null literal
-    }.toString
+    expr.transform { case lit: Literal => Literal(null) }.toString
   }
 
-  // For SparkPlan (Physical Plan)
   def computeStrictSignature(plan: SparkPlan): String = {
     val nodeDetails = plan.nodeName + plan.expressions.map(_.toString).mkString
     hashString(nodeDetails)
@@ -51,45 +58,50 @@ object PlanSignature {
   }
 }
 
-class SqlExecutionListener extends QueryExecutionListener with Logging {
+class SqlExecutionListener(spark: SparkSession) extends QueryExecutionListener with Logging {
 
   override def onSuccess(funcName: String, qe: QueryExecution, durationNs: Long): Unit = {
     val durationMs: Long = durationNs / 1000000
-    logError(s"Query succeeded in $durationMs ms")
+    logInfo(s"Query succeeded in $durationMs ms")
 
-    // Log the parsed, analyzed, optimized plans (Logical Plans)
-    logPlanWithSignatures(qe.logical, "Parsed Logical Plan")
-    logPlanWithSignatures(qe.analyzed, "Analyzed Logical Plan")
-    logPlanWithSignatures(qe.optimizedPlan, "Optimized Logical Plan")
-    logPhysicalPlanWithSignatures(qe.executedPlan, "Physical Execution Plan")
-  }
+    // Gather all plans as JSON
+    val parsedPlanJson = qe.logical.prettyJson
+    val analyzedPlanJson = qe.analyzed.prettyJson
+    val optimizedPlanJson = qe.optimizedPlan.prettyJson
+    val physicalPlanJson = qe.executedPlan.prettyJson
 
-  // Method for LogicalPlan
-  def logPlanWithSignatures(plan: LogicalPlan, planType: String): Unit = {
-    logError(s"$planType in JSON: ${plan.prettyJson}")
+    // Compute signatures for each plan
+    val parsedSignatures = computePlanSignatures(qe.logical)
+    val analyzedSignatures = computePlanSignatures(qe.analyzed)
+    val optimizedSignatures = computePlanSignatures(qe.optimizedPlan)
+    val physicalSignatures = computePlanSignatures(qe.executedPlan)
 
-    plan.foreach { node =>
-      val strictSignature = PlanSignature.computeStrictSignature(node)
-      val recurringSignature = PlanSignature.computeRecurringSignature(node)
-      logError(
-        s"Node: ${node.nodeName}, Strict Signature: $strictSignature, Recurring Signature: $recurringSignature")
-    }
-  }
-
-  // Method for SparkPlan (Physical Plan)
-  def logPhysicalPlanWithSignatures(plan: SparkPlan, planType: String): Unit = {
-    logError(s"$planType in JSON: ${plan.prettyJson}")
-
-    plan.foreach { node =>
-      val strictSignature = PlanSignature.computeStrictSignature(node)
-      val recurringSignature = PlanSignature.computeRecurringSignature(node)
-      logError(
-        s"Node: ${node.nodeName}, Strict Signature: $strictSignature, Recurring Signature: $recurringSignature")
-    }
+    // Create a single map of all node signatures
+    log.Error("SIGNATURE:" + optimizedSignatures)
+    log.Error("PLAN JSON" + optimizedPlanJson)
   }
 
   override def onFailure(funcName: String, qe: QueryExecution, exception: Exception): Unit = {
     logError(s"Query failed with error: ${exception.getMessage}")
   }
-}
 
+  // Helper function to compute the signatures for all nodes in a plan
+  private def computePlanSignatures(plan: LogicalPlan): Map[String, (String, String)] = {
+    plan.collect {
+      case node =>
+        val strictSignature = PlanSignature.computeStrictSignature(node)
+        val recurringSignature = PlanSignature.computeRecurringSignature(node)
+        node.nodeName -> (strictSignature, recurringSignature)
+    }.toMap
+  }
+
+  private def computePlanSignatures(plan: SparkPlan): Map[String, (String, String)] = {
+    plan.collect {
+      case node =>
+        logError("NODE: " + node)
+        val strictSignature = PlanSignature.computeStrictSignature(node)
+        val recurringSignature = PlanSignature.computeRecurringSignature(node)
+        node.nodeName -> (strictSignature, recurringSignature)
+    }.toMap
+  }
+}
