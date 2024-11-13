@@ -24,7 +24,7 @@ class FlintSparkOptimizer(spark: SparkSession) extends Rule[LogicalPlan] {
 
   /** Flint Spark API */
   private val flint: FlintSpark = new FlintSpark(spark)
-  private val li = spark.listenerManager.register(new SqlExecutionListener())
+  private val li = spark.listenerManager.register(new SqlExecutionListener(spark))
   logError("LOGGING WORKING CORRECTLY")
 
   /** Skipping index rewrite rule */
