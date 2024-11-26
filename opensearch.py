@@ -44,11 +44,13 @@ opensearch_client = OpenSearch(
     ssl_show_warn=True
 )
 
+home_directory = os.path.expanduser("~")
+
 spark = SparkSession.builder \
     .appName("MySparkExtensionApp") \
     .config("spark.sql.extensions", "org.opensearch.flint.spark.FlintSparkExtensions") \
     .config("spark.sql.catalog.dev", "org.apache.spark.opensearch.catalog.OpenSearchCatalog") \
-    .config("spark.jars", "/Users/lucas/.m2/repository/org/opensearch/opensearch-spark-standalone_2.12/0.6.0-SNAPSHOT/opensearch-spark-standalone_2.12-0.6.0-SNAPSHOT.jar") \
+    .config("spark.jars", f"{home_directory}/.m2/repository/org/opensearch/opensearch-spark-standalone_2.12/0.6.0-SNAPSHOT/opensearch-spark-standalone_2.12-0.6.0-SNAPSHOT.jar") \
     .config("spark.jars.packages", "org.opensearch.client:opensearch-spark-30_2.12:1.2.0") \
     .config("opensearch.nodes", aws_opensearch_host) \
     .config("opensearch.port", "443") \
